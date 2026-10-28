@@ -1,0 +1,17 @@
+{
+  "name": "Agent Hub",
+  "description": "Cross-agent local Skills and MCP manager: scan Claude Code, Codex, Qoder, Trae, WorkBuddy and Pi; install skills from GitHub or archives; manage MCP server configs.",
+  "icon": "assets/plugin.svg",
+  "tags": ["skills", "mcp", "agent", "claude-code", "codex", "qoder", "trae", "workbuddy", "pi", "git"],
+  "permissions": [],
+  "source": "https://github.com/song782360037/dbx-plugin-agenthub",
+  "homepage": "https://github.com/song782360037/dbx-plugin-agenthub",
+  "license": "Apache-2.0",
+  "releaseNotes": "0.1.0: local skill inventory, GitHub/ZIP/local import, center library, multi-client sync, drift detection, update checks, and MCP server config management.",
+  "localizations": {
+    "zh-CN": {
+      "name": "Agent Hub",
+      "description": "Agent 工具中心：扫描 Claude Code、Codex、Qoder、Trae、WorkBuddy、Pi，支持 Skills 导入、多端同步、漂移检测、更新检查和 MCP 配置管理。"
+    }
+  }
+}

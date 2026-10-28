@@ -1,0 +1,15 @@
+{
+  "name": "dbx-agenthub-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agent Hub: cross-agent local skills and MCP manager for DBX",
+  "scripts": {
+    "dev": "node dev.mjs",
+    "build": "dbx-plugin package .",
+    "test": "go -C backend test ./...",
+    "check": "node --check ui/app.js && node --check dev.mjs && node .dbx-dev/app.ui.test.js && go -C backend vet ./..."
+  },
+  "devDependencies": {
+    "@dbx-app/plugin-cli": "0.1.9"
+  }
+}

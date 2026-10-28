@@ -1,0 +1,9 @@
+/dist/
+/.dbx-dev/
+/node_modules/
+/backend/*.exe
+/backend/agenthub
+.dbx-repository-signing-key.env
+.DS_Store
+*.log
+/backend/*.exe~

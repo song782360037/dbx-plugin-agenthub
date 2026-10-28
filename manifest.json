@@ -1,0 +1,72 @@
+{
+  "$schema": "https://raw.githubusercontent.com/t8y2/dbx/main/plugins/manifest.schema.json",
+  "manifest_version": 1,
+  "id": "io.github.song782360037.agenthub",
+  "name": "Agent Hub",
+  "version": "0.1.0",
+  "publisher": "song782360037",
+  "description": "本地 Agent 工具中心：扫描 Claude Code、Codex、Qoder、Trae、WorkBuddy、Pi 等客户端，统一管理 Skills 与 MCP 配置。",
+  "icon": "assets/plugin.svg",
+  "engines": { "dbx": ">=0.5.68", "host_api": "1" },
+  "permissions": [],
+  "entrypoints": {
+    "backend": { "executable": "bin/dbx-plugin-agenthub", "protocol_versions": [1], "transport": "stdio-jsonl" },
+    "ui": { "root": "ui", "entry": "ui/index.html" }
+  },
+  "contributions": [
+    {
+      "type": "workbench",
+      "id": "io.github.song782360037.agenthub.workbench",
+      "label": "Agent Hub",
+      "description": "扫描、导入、同步和更新本地 Agent Skills 与 MCP 配置",
+      "icon": "assets/plugin.svg"
+    },
+    {
+      "type": "command",
+      "id": "io.github.song782360037.agenthub.open",
+      "label": "打开 Agent Hub",
+      "description": "打开本地 Agent Skills 与 MCP 工作台",
+      "icon": "assets/plugin.svg",
+      "action": {
+        "type": "open-workbench",
+        "workbench": "io.github.song782360037.agenthub.workbench"
+      }
+    },
+    {
+      "type": "menus",
+      "id": "io.github.song782360037.agenthub.menus",
+      "items": [
+        {
+          "location": "appToolbar",
+          "command": "io.github.song782360037.agenthub.open",
+          "group": "navigation",
+          "order": 120,
+          "default_visible": true
+        }
+      ]
+    },
+    {
+      "type": "mcp",
+      "id": "io.github.song782360037.agenthub.mcp",
+      "description": "只读技能与 MCP 清单/搜索工具；安装、修改和删除必须在工作台中确认。",
+      "ai_tools": true,
+      "external_tools": true
+    }
+  ],
+  "localizations": {
+    "zh-CN": {
+      "name": "Agent Hub",
+      "description": "本地 Agent 工具中心：扫描 Claude Code、Codex、Qoder、Trae、WorkBuddy、Pi 等客户端，统一管理 Skills 与 MCP 配置。",
+      "contributions": {
+        "io.github.song782360037.agenthub.workbench": {
+          "label": "Agent Hub",
+          "description": "扫描、导入、同步和更新本地 Agent Skills 与 MCP 配置"
+        },
+        "io.github.song782360037.agenthub.open": {
+          "label": "打开 Agent Hub",
+          "description": "打开本地 Agent Skills 与 MCP 工作台"
+        }
+      }
+    }
+  }
+}

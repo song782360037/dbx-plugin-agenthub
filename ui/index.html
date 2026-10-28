@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Agent Hub</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Agent Hub 导航">
+        <div class="sidebar-header">
+          <div class="brand">
+            <svg class="brand-icon" viewBox="0 0 64 64" aria-hidden="true">
+              <rect width="64" height="64" rx="15" fill="#1f5f8b"/>
+              <path d="M18 22.5 32 15l14 7.5-14 7.7-14-7.7Z" fill="none" stroke="#d8eefb" stroke-width="3" stroke-linejoin="round"/>
+              <path d="m18 31.5 14 7.7 14-7.7M18 40.5l14 7.7 14-7.7" fill="none" stroke="#8fd0f0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="47.5" cy="17.5" r="5.5" fill="#f0b24a"/>
+            </svg>
+            <div class="brand-text">
+              <p class="brand-title">Agent Hub</p>
+              <p>Skills & MCP</p>
+            </div>
+          </div>
+          <button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="section-menu">展开菜单</button>
+        </div>
+        <p class="menu-label">工作台</p>
+        <nav id="section-menu" class="section-menu" role="tablist" aria-orientation="vertical">
+          <button data-view="overview" type="button" role="tab" aria-selected="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            概览
+          </button>
+          <button data-view="library" type="button" role="tab" aria-selected="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H9v16H5.5A1.5 1.5 0 0 1 4 18.5v-13Z"/><path d="M9 4h4.5A1.5 1.5 0 0 1 15 5.5v13a1.5 1.5 0 0 1-1.5 1.5H9"/><path d="m17 5 3 .8-3.2 13.4-3-.8"/></svg>
+            技能库
+            <span id="nav-skill-count" class="nav-count" hidden>0</span>
+          </button>
+          <button data-view="mcp" type="button" role="tab" aria-selected="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/></svg>
+            MCP 服务
+            <span id="nav-mcp-count" class="nav-count" hidden>0</span>
+          </button>
+          <button data-view="install" type="button" role="tab" aria-selected="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 19h16"/></svg>
+            安装
+          </button>
+          <button data-view="settings" type="button" role="tab" aria-selected="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.12 2.12-.06-.06A1.7 1.7 0 0 0 15 18.66a1.7 1.7 0 0 0-1 .34 1.7 1.7 0 0 0-.66 1.4V21h-3v-.6A1.7 1.7 0 0 0 9.7 19a1.7 1.7 0 0 0-1.88-.34l-.06.06-2.12-2.12.06-.06A1.7 1.7 0 0 0 6.04 15a1.7 1.7 0 0 0-.34-1 1.7 1.7 0 0 0-1.4-.66H4v-3h.6A1.7 1.7 0 0 0 6.3 9a1.7 1.7 0 0 0 .34-1.88l-.06-.06 2.12-2.12.06.06A1.7 1.7 0 0 0 10.64 5a1.7 1.7 0 0 0 1-.34A1.7 1.7 0 0 0 12.3 3.3V3h3v.6A1.7 1.7 0 0 0 16 5.3a1.7 1.7 0 0 0 1.88.34l.06-.06 2.12 2.12-.06.06A1.7 1.7 0 0 0 19.66 10c.1.38.32.72.64.98.3.24.68.37 1.07.37H22v3h-.6a1.7 1.7 0 0 0-1.4.66Z"/></svg>
+            设置
+          </button>
+        </nav>
+        <div class="sidebar-footer">
+          <span class="sidebar-line"><i id="hub-led" class="led"></i><span id="sidebar-hub">中心库准备中</span></span>
+          <span id="sidebar-summary" class="sidebar-muted">尚未扫描</span>
+        </div>
+      </aside>
+
+      <div class="page-shell">
+        <header class="topbar">
+          <div class="page-heading">
+            <p class="breadcrumb">Agent Hub / <span id="breadcrumb-view">概览</span></p>
+            <h1 id="page-title">概览</h1>
+          </div>
+          <div class="toolbar" id="global-toolbar">
+            <button id="refresh" type="button">刷新</button>
+            <button id="check-updates" type="button">检查更新</button>
+            <button id="open-install" class="primary" type="button">安装技能</button>
+            <button id="add-mcp" class="primary" type="button" hidden>添加 MCP</button>
+          </div>
+        </header>
+
+        <main class="page-content">
+          <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+          <div id="warning-banner" class="notice warning" role="status" aria-live="polite" hidden></div>
+
+          <section id="view-overview" class="view" role="tabpanel" aria-label="概览">
+            <div id="overview-stats" class="stats-grid"></div>
+            <div class="overview-grid">
+              <section class="card">
+                <div class="card-heading">
+                  <div><h2>客户端检测</h2><p id="overview-client-summary" class="subtle">尚未扫描</p></div>
+                  <button id="rescan" type="button">重新扫描</button>
+                </div>
+                <details class="client-details">
+                  <summary>查看客户端与路径</summary>
+                  <p class="hint">扫描全局技能目录；路径可在设置中覆盖。</p>
+                  <div id="overview-clients" class="client-list"></div>
+                </details>
+              </section>
+              <section class="card">
+                <div class="card-heading"><div><h2>需要处理</h2><p class="subtle">有更新、部分同步、本地修改或冲突的技能。</p></div></div>
+                <div id="overview-attention" class="compact-list"></div>
+              </section>
+            </div>
+            <section class="card">
+              <div class="card-heading"><div><h2>最近技能</h2><p class="subtle">按更新时间排序，点击查看说明、文件和安装目标。</p></div><button id="overview-more" type="button">打开技能库</button></div>
+              <div id="overview-recent" class="compact-list"></div>
+            </section>
+            <section class="card">
+              <div class="card-heading"><div><h2>MCP 服务</h2><p class="subtle">各客户端的 MCP 配置；支持统一编辑、同步和停用。</p></div><button id="overview-mcp-more" type="button">打开 MCP</button></div>
+              <div id="overview-mcp" class="compact-list"></div>
+            </section>
+
+            <section class="card">
+              <div class="card-heading"><div><h2>中心库</h2><p class="subtle">所有纳管技能的唯一来源；客户端目录通过链接或副本同步。</p></div></div>
+              <div id="overview-hub" class="hub-info"></div>
+            </section>
+          </section>
+
+          <section id="view-library" class="view" role="tabpanel" aria-label="技能库" hidden>
+            <section class="card">
+              <div class="card-heading card-heading-filters">
+                <div><h2>技能库</h2><p id="library-summary" class="subtle">尚未扫描</p></div>
+                <div class="filters">
+                  <label class="search-field"><span class="sr-only">搜索技能</span><input id="library-search" type="search" placeholder="搜索名称、描述或来源" autocomplete="off" /></label>
+                  <select id="library-status" aria-label="按状态筛选">
+                    <option value="all">全部状态</option>
+                    <option value="attention">需要处理</option>
+                    <option value="synced">已同步</option>
+                    <option value="partial">部分同步</option>
+                    <option value="update">有更新</option>
+                    <option value="modified">本地已修改</option>
+                    <option value="conflict">冲突</option>
+                    <option value="untracked">未纳管</option>
+                    <option value="hub_only">仅中心库</option>
+                  </select>
+                  <label class="check-inline"><input id="library-managed-only" type="checkbox" /> 仅已纳管</label>
+                </div>
+              </div>
+              <div id="library-list" class="skill-list"></div>
+              <div id="library-empty" class="empty-state" hidden>
+                <span class="empty-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H9v16H5.5A1.5 1.5 0 0 1 4 18.5v-13Z"/><path d="M9 4h4.5A1.5 1.5 0 0 1 15 5.5v13a1.5 1.5 0 0 1-1.5 1.5H9"/></svg>
+                </span>
+                <h3 id="library-empty-title">还没有技能</h3>
+                <p id="library-empty-text">从 GitHub 或压缩包导入第一个技能。</p>
+                <button class="primary" type="button" data-action="go-install">安装技能</button>
+              </div>
+            </section>
+          </section>
+
+          <section id="view-mcp" class="view" role="tabpanel" aria-label="MCP 服务" hidden>
+            <div id="mcp-stats" class="stats-grid"></div>
+            <div id="mcp-warning" class="notice warning" role="status" aria-live="polite" hidden></div>
+            <section class="card">
+              <div class="card-heading card-heading-filters">
+                <div><h2>MCP 服务</h2><p id="mcp-summary" class="subtle">尚未扫描</p></div>
+                <div class="filters">
+                  <label class="search-field"><span class="sr-only">搜索 MCP</span><input id="mcp-search" type="search" placeholder="搜索名称、命令或 URL" autocomplete="off" /></label>
+                  <select id="mcp-status" aria-label="按状态筛选 MCP">
+                    <option value="all">全部状态</option>
+                    <option value="attention">需要处理</option>
+                    <option value="synced">已同步</option>
+                    <option value="partial">部分同步</option>
+                    <option value="modified">本地已修改</option>
+                    <option value="conflict">冲突</option>
+                    <option value="untracked">未纳管</option>
+                    <option value="hub_only">仅中心库</option>
+                  </select>
+                  <button id="mcp-import-button" type="button">从 JSON 导入</button>
+                </div>
+              </div>
+              <div id="mcp-list" class="skill-list mcp-list"></div>
+              <div id="mcp-empty" class="empty-state" hidden>
+                <span class="empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/></svg></span>
+                <h3 id="mcp-empty-title">还没有 MCP 服务</h3>
+                <p id="mcp-empty-text">添加一个 stdio 或 HTTP MCP 服务，并选择要同步的客户端。</p>
+                <button class="primary" type="button" data-action="add-mcp">添加 MCP</button>
+              </div>
+            </section>
+            <section class="card">
+              <div class="card-heading"><div><h2>客户端配置</h2><p class="subtle">只修改 mcpServers 条目，写入前自动备份原文件。</p></div></div>
+              <div id="mcp-adapters" class="client-list"></div>
+            </section>
+          </section>
+
+          <section id="view-install" class="view" role="tabpanel" aria-label="安装" hidden>
+            <div class="install-grid">
+              <section class="card">
+                <div class="card-heading"><div><h2>安装来源</h2><p class="subtle">支持 GitHub 仓库/子目录、ZIP/TAR.GZ 和本地目录。技能会先进入中心库。</p></div></div>
+                <div class="segmented source-type" id="source-type" role="group" aria-label="来源类型">
+                  <button type="button" data-type="github" aria-pressed="true">GitHub</button>
+                  <button type="button" data-type="zip" aria-pressed="false">压缩包</button>
+                  <button type="button" data-type="local" aria-pressed="false">本地目录</button>
+                </div>
+                <div id="source-github" class="source-panel">
+                  <label class="field"><span>仓库或链接</span><input id="source-value" type="text" placeholder="anthropics/skills 或 https://github.com/.../tree/main/skills/frontend-design" autocomplete="off" /></label>
+                  <div class="field-row">
+                    <label class="field"><span>Ref（可选）</span><input id="source-ref" type="text" placeholder="tag / 分支 / commit；留空取最新 Release" autocomplete="off" /></label>
+                    <label class="field"><span>子目录（可选）</span><input id="source-path" type="text" placeholder="skills/frontend-design" autocomplete="off" /></label>
+                  </div>
+                </div>
+                <div id="source-zip" class="source-panel" hidden>
+                  <label class="field"><span>选择压缩包</span><input id="zip-file" type="file" accept=".zip,.tar.gz,.tgz,application/zip,application/gzip" /></label>
+                  <p class="hint">工作台上传上限 4 MiB；更大的包请解压后使用“本地目录”，或直接填写 GitHub 地址。</p>
+                </div>
+                <div id="source-local" class="source-panel" hidden>
+                  <label class="field"><span>本地路径</span><input id="local-value" type="text" placeholder="例如 D:\\skills\\my-skill 或 D:\\Downloads\\skill.zip" autocomplete="off" /></label>
+                  <p class="hint">支持目录、zip/tar.gz 或单个 SKILL.md；目录会先复制快照再解析，不会直接运行其中的脚本。</p>
+                </div>
+                <div class="form-actions">
+                  <button id="preview-source" class="primary" type="button">解析来源</button>
+                  <span id="source-status" class="subtle"></span>
+                </div>
+              </section>
+
+              <section class="card">
+                <div class="card-heading"><div><h2>安装预览</h2><p class="subtle">选择技能和同步方式；目标客户端可留空，只保存到中心库。</p></div></div>
+                <div id="preview-panel" class="preview-panel">
+                  <div class="empty-state compact">
+                    <h3>尚未解析来源</h3>
+                    <p>填写左侧来源后点击“解析来源”。解析只下载到临时目录，不会写入客户端。</p>
+                  </div>
+                </div>
+                <div id="install-options" class="install-options" hidden>
+                  <div class="option-block">
+                    <h3>目标客户端</h3>
+                    <div id="install-targets" class="target-picker"></div>
+                    <p id="target-hint" class="hint"></p>
+                  </div>
+                  <div class="option-block">
+                    <h3>同步方式</h3>
+                    <div class="segmented" id="install-mode" role="group" aria-label="同步方式">
+                      <button type="button" data-mode="auto" aria-pressed="true">自动（链接优先）</button>
+                      <button type="button" data-mode="link" aria-pressed="false">链接</button>
+                      <button type="button" data-mode="copy" aria-pressed="false">副本</button>
+                    </div>
+                    <p class="hint">Windows 下符号链接失败会自动回退到目录联接，再失败则复制并记录来源。选择“副本”时每个客户端会独立保存一份。</p>
+                  </div>
+                  <label class="check-line"><input id="install-overwrite" type="checkbox" /> 允许覆盖同名技能或未纳管目录（旧文件会移入插件回收站）</label>
+                  <label class="check-line"><input id="install-ack" type="checkbox" /> 我已查看风险项，仍要安装含高危脚本的技能</label>
+                  <div class="form-actions">
+                    <button id="install-button" class="primary" type="button">开始安装</button>
+                    <span id="install-status" class="subtle"></span>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <section id="view-settings" class="view" role="tabpanel" aria-label="设置" hidden>
+            <div class="settings-grid">
+              <section class="card">
+                <div class="card-heading"><div><h2>网络与来源</h2><p class="subtle">GitHub 直连受限时填写代理；Token 只保存在插件数据目录。</p></div></div>
+                <label class="field"><span>HTTPS 代理</span><input id="settings-proxy" type="text" placeholder="http://127.0.0.1:7890" autocomplete="off" /></label>
+                <label class="field"><span>GitHub Token</span><input id="settings-token" type="password" placeholder="留空保持不变；填写后用于 API 和私有仓库" autocomplete="off" /></label>
+                <label class="check-line"><input id="settings-clear-token" type="checkbox" /> 清除已保存的 Token</label>
+                <div class="form-actions">
+                  <button id="test-connection" type="button">测试 GitHub 连接</button>
+                  <span id="connection-status" class="subtle"></span>
+                </div>
+                <p class="hint">修改代理或 Token 后先保存设置，再测试连接。</p>
+              </section>
+
+              <section class="card">
+                <div class="card-heading"><div><h2>安装与扫描</h2><p class="subtle">默认值会带进下一次安装；风险扫描只做静态检查，不执行代码。</p></div></div>
+                <label class="field"><span>默认同步方式</span>
+                  <select id="settings-mode">
+                    <option value="auto">自动（链接优先）</option>
+                    <option value="link">链接</option>
+                    <option value="copy">副本</option>
+                  </select>
+                </label>
+                <label class="field"><span>风险扫描</span>
+                  <select id="settings-scan">
+                    <option value="basic">基础规则（推荐）</option>
+                    <option value="off">关闭</option>
+                  </select>
+                </label>
+                <label class="field"><span>下载上限（MiB）</span><input id="settings-max" type="number" min="1" max="512" step="1" /></label>
+                <div class="form-actions"><button id="save-settings" class="primary" type="button">保存设置</button><span id="settings-status" class="subtle"></span></div>
+              </section>
+
+              <section class="card settings-wide">
+                <div class="card-heading"><div><h2>客户端路径</h2><p class="subtle">留空使用默认路径；支持 ~ 展开。技能目录指的是存放 SKILL.md 的父目录。</p></div></div>
+                <div id="agent-paths" class="agent-paths"></div>
+              </section>
+
+              <section class="card settings-wide">
+                <div class="card-heading"><div><h2>自定义客户端</h2><p class="subtle">用于未内置的 Agent Skills 客户端；ID 只允许小写字母、数字和连字符。</p></div><button id="add-custom-agent" type="button">添加</button></div>
+                <div id="custom-agents" class="custom-agents"></div>
+              </section>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
+    <aside id="detail-drawer" class="drawer" role="dialog" aria-modal="true" aria-label="技能详情" tabindex="-1" hidden>
+      <header class="drawer-head">
+        <div>
+          <p class="breadcrumb">技能详情</p>
+          <h2 id="detail-name">—</h2>
+          <p id="detail-desc" class="subtle"></p>
+        </div>
+        <button id="detail-close" class="icon-button" type="button" aria-label="关闭详情">×</button>
+      </header>
+      <div id="detail-meta" class="detail-meta"></div>
+      <nav id="detail-tabs" class="tabs" role="tablist">
+        <button data-tab="readme" type="button" role="tab" aria-selected="true">说明</button>
+        <button data-tab="files" type="button" role="tab" aria-selected="false">文件</button>
+        <button data-tab="targets" type="button" role="tab" aria-selected="false">安装目标</button>
+      </nav>
+      <div id="detail-body" class="drawer-body"></div>
+      <footer id="detail-actions" class="drawer-footer"></footer>
+    </aside>
+
+    <div id="mcp-backdrop" class="drawer-backdrop" hidden></div>
+    <aside id="mcp-drawer" class="drawer" role="dialog" aria-modal="true" aria-label="MCP 服务详情" tabindex="-1" hidden>
+      <header class="drawer-head">
+        <div>
+          <p class="breadcrumb" id="mcp-drawer-breadcrumb">MCP 服务</p>
+          <h2 id="mcp-drawer-title">—</h2>
+          <p id="mcp-drawer-desc" class="subtle"></p>
+        </div>
+        <button id="mcp-close" class="icon-button" type="button" aria-label="关闭 MCP 详情">×</button>
+      </header>
+      <div id="mcp-drawer-meta" class="detail-meta"></div>
+      <div class="drawer-body mcp-form">
+        <label id="mcp-source-row" class="field" hidden><span>来源客户端</span><select id="mcp-source" aria-describedby="mcp-source-hint"></select><small id="mcp-source-hint" class="hint">同名配置可能不同；请明确选择要查看并纳入管理的来源。</small></label>
+        <label class="field"><span>服务名</span><input id="mcp-name" type="text" placeholder="例如 tavily-mcp" autocomplete="off" /></label>
+        <label class="field"><span>传输方式</span>
+          <select id="mcp-transport">
+            <option value="stdio">stdio（本地进程）</option>
+            <option value="http">HTTP（streamable HTTP）</option>
+            <option value="sse">SSE</option>
+          </select>
+        </label>
+        <div id="mcp-stdio-fields" class="mcp-field-group">
+          <label class="field"><span>Command</span><input id="mcp-command" type="text" placeholder="例如 npx、uvx 或可执行文件路径" autocomplete="off" /></label>
+          <label class="field"><span>Args（JSON 字符串数组或每行一个）</span><textarea id="mcp-args" rows="4" aria-describedby="mcp-args-hint" placeholder='["-y", "@upstash/context7-mcp@latest"]' spellcheck="false"></textarea></label>
+          <p id="mcp-args-hint" class="hint">已有参数以 JSON 数组显示，无损保留空参数与空白。以 [ 开头按 JSON 解析；逐行模式不去空白，每个空行（含末尾空行）都是空参数；完全留空表示无参数。单个空参数请用 [""]。</p>
+        </div>
+        <div id="mcp-http-fields" class="mcp-field-group" hidden>
+          <label class="field"><span>URL</span><input id="mcp-url" type="text" placeholder="https://example.com/mcp" autocomplete="off" /></label>
+          <label class="field"><span>Headers（KEY=VALUE，每行一个）</span><textarea id="mcp-headers" rows="4" placeholder="Authorization=Bearer ${TOKEN}"></textarea></label>
+        </div>
+        <label id="mcp-env-field" class="field"><span>环境变量（KEY=VALUE，每行一个）</span><textarea id="mcp-env" rows="4" placeholder="TAVILY_API_KEY=..." spellcheck="false"></textarea></label>
+        <p class="hint">等号后的所有空白均属于值；空行和 # 注释行忽略。键名无效或重复时不能保存。</p>
+        <label class="field"><span>超时（毫秒，0 表示客户端默认）</span><input id="mcp-timeout" type="number" min="0" max="600000" step="100" /></label>
+        <div class="option-block">
+          <h3>目标客户端</h3>
+          <div id="mcp-targets" class="target-picker"></div>
+          <p id="mcp-target-hint" class="hint"></p>
+        </div>
+        <label class="check-line"><input id="mcp-overwrite" type="checkbox" /> 允许覆盖客户端中同名或本地修改的配置（原文件会备份）</label>
+        <p id="mcp-form-status" class="hint"></p>
+      </div>
+      <footer class="drawer-footer">
+        <button id="mcp-import-open" type="button">从 JSON 导入</button>
+        <button id="mcp-adopt" class="primary" type="button" hidden>纳入管理</button>
+        <button id="mcp-save" class="primary" type="button">保存并同步</button>
+        <button id="mcp-remove" class="danger" type="button" hidden>移除</button>
+      </footer>
+    </aside>
+
+    <div id="mcp-import-modal" class="modal-backdrop" hidden>
+      <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="mcp-import-title">
+        <h2 id="mcp-import-title">导入 MCP JSON</h2>
+        <p>支持粘贴完整配置片段、<code>{"mcpServers": {...}}</code> 或单个服务对象。</p>
+        <textarea id="mcp-import-text" rows="9" placeholder="{
+  &quot;mcpServers&quot;: {
+    &quot;context7&quot;: {
+      &quot;command&quot;: &quot;npx&quot;,
+      &quot;args&quot;: [&quot;-y&quot;, &quot;@upstash/context7-mcp@latest&quot;]
+    }
+  }
+}"></textarea>
+        <label id="mcp-import-select-row" class="field" hidden><span>选择要填入的服务</span><select id="mcp-import-select"></select></label>
+        <div class="form-actions">
+          <button id="mcp-import-parse" class="primary" type="button">解析</button>
+          <button id="mcp-import-close" type="button">取消</button>
+          <button id="mcp-import-apply" type="button" hidden>填入表单</button>
+          <span id="mcp-import-status" class="subtle"></span>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal" class="modal-backdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <h2 id="modal-title">确认操作</h2>
+        <p id="modal-message"></p>
+        <div id="modal-extra" class="modal-extra" hidden></div>
+        <label id="modal-source-row" class="field" hidden><span>来源客户端（必选）</span><select id="modal-source"></select></label>
+        <label id="modal-check-row" class="check-line" hidden><input id="modal-check" type="checkbox" /> <span id="modal-check-label"></span></label>
+        <label id="modal-ack-row" class="check-line" hidden><input id="modal-ack" type="checkbox" /> <span id="modal-ack-label"></span></label>
+        <div class="modal-actions">
+          <button id="modal-cancel" type="button">取消</button>
+          <button id="modal-ok" class="danger primary" type="button">确认</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <script src="./app.js"></script>
+  </body>
+</html>
