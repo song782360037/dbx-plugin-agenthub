@@ -7,7 +7,7 @@
   "source": "https://github.com/song782360037/dbx-plugin-agenthub",
   "homepage": "https://github.com/song782360037/dbx-plugin-agenthub",
   "license": "Apache-2.0",
-  "releaseNotes": "0.1.0: local skill inventory, GitHub/ZIP/local import, center library, multi-client sync, drift detection, update checks, and MCP server config management.",
+  "releaseNotes": "0.1.1: declares the read-only skills_list/skills_search/skills_get MCP tools so external clients can discover them; ships LICENSE and third-party OFL notice. 0.1.0 introduced local skill inventory, GitHub/ZIP/local import, center library, multi-client sync, drift detection, update checks, and MCP server config management.",
   "localizations": {
     "zh-CN": {
       "name": "Agent Hub",

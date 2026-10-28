@@ -3,7 +3,7 @@
   "manifest_version": 1,
   "id": "io.github.song782360037.agenthub",
   "name": "Agent Hub",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "song782360037",
   "description": "本地 Agent 工具中心：扫描 Claude Code、Codex、Qoder、Trae、WorkBuddy、Pi 等客户端，统一管理 Skills 与 MCP 配置。",
   "icon": "assets/plugin.svg",
@@ -50,7 +50,12 @@
       "id": "io.github.song782360037.agenthub.mcp",
       "description": "只读技能与 MCP 清单/搜索工具；安装、修改和删除必须在工作台中确认。",
       "ai_tools": true,
-      "external_tools": true
+      "external_tools": true,
+      "tools": {
+        "skills_list": { "access": "read" },
+        "skills_search": { "access": "read" },
+        "skills_get": { "access": "read" }
+      }
     }
   ],
   "localizations": {

@@ -1,6 +1,6 @@
 {
   "name": "dbx-agenthub-plugin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Agent Hub: cross-agent local skills and MCP manager for DBX",
   "scripts": {

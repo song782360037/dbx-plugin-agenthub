@@ -5,7 +5,7 @@ import "time"
 const (
 	appID            = "io.github.song782360037.agenthub"
 	legacyAppID      = "io.github.song782360037.skillsmanager"
-	appVersion       = "0.1.0"
+	appVersion       = "0.1.1"
 	markerName       = ".agenthub.json"
 	legacyMarkerName = ".dbx-skills.json"
 	stateFile        = "state.json"
