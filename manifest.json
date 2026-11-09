@@ -3,7 +3,7 @@
   "manifest_version": 1,
   "id": "io.github.song782360037.agenthub",
   "name": "Agent Hub",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "song782360037",
   "description": "本地 Agent 工具中心：扫描 Claude Code、Codex、Qoder、Trae、WorkBuddy、Pi 等客户端，统一管理 Skills 与 MCP 配置。",
   "icon": "assets/plugin.svg",

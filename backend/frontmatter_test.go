@@ -50,6 +50,20 @@ func TestParseSkillContentInvalidName(t *testing.T) {
 	}
 }
 
+func TestLongDescriptionWarnsButDoesNotBlockInstall(t *testing.T) {
+	description := strings.Repeat("a", 1025)
+	meta := parseSkillContent("---\nname: long-skill\ndescription: "+description+"\n---\n", "long-skill")
+	if len(meta.Warnings) != 1 || !strings.Contains(meta.Warnings[0], "description 超过 1024") {
+		t.Fatalf("warnings = %#v", meta.Warnings)
+	}
+	if err := validateCandidate(Candidate{Name: meta.Name, Description: meta.Description}); err != nil {
+		t.Fatalf("long description must not block install: %v", err)
+	}
+	if err := validateCandidate(Candidate{Name: strings.Repeat("a", 65), Description: "demo"}); err == nil {
+		t.Fatal("expected name length limit to be enforced")
+	}
+}
+
 func TestHashDirIgnoresMarkerAndDetectsEdits(t *testing.T) {
 	dir := t.TempDir()
 	mustWrite(t, filepath.Join(dir, "SKILL.md"), "---\nname: demo\ndescription: demo\n---\nhello\n")

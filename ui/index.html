@@ -25,7 +25,6 @@
           </div>
           <button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="section-menu">展开菜单</button>
         </div>
-        <p class="menu-label">工作台</p>
         <nav id="section-menu" class="section-menu" role="tablist" aria-orientation="vertical">
           <button data-view="overview" type="button" role="tab" aria-selected="true">
             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
@@ -59,13 +58,13 @@
       <div class="page-shell">
         <header class="topbar">
           <div class="page-heading">
-            <p class="breadcrumb">Agent Hub / <span id="breadcrumb-view">概览</span></p>
             <h1 id="page-title">概览</h1>
           </div>
           <div class="toolbar" id="global-toolbar">
             <button id="refresh" type="button">刷新</button>
             <button id="check-updates" type="button">检查更新</button>
             <button id="open-install" class="primary" type="button">安装技能</button>
+            <button id="mcp-import-button" type="button" hidden>从 JSON 导入</button>
             <button id="add-mcp" class="primary" type="button" hidden>添加 MCP</button>
           </div>
         </header>
@@ -75,43 +74,41 @@
           <div id="warning-banner" class="notice warning" role="status" aria-live="polite" hidden></div>
 
           <section id="view-overview" class="view" role="tabpanel" aria-label="概览">
-            <div id="overview-stats" class="stats-grid"></div>
-            <div class="overview-grid">
-              <section class="card">
-                <div class="card-heading">
-                  <div><h2>客户端检测</h2><p id="overview-client-summary" class="subtle">尚未扫描</p></div>
-                  <button id="rescan" type="button">重新扫描</button>
+            <div id="overview-stats" class="stat-strip"></div>
+            <div class="overview-layout">
+              <div class="overview-main">
+                <section class="card">
+                  <div class="card-heading"><div><h2>需要处理</h2></div></div>
+                  <div id="overview-attention" class="compact-list"></div>
+                </section>
+                <div class="overview-pair">
+                  <section class="card">
+                    <div class="card-heading"><div><h2>最近技能</h2></div><button id="overview-more" class="subtle-button" type="button">查看全部</button></div>
+                    <div id="overview-recent" class="compact-list"></div>
+                  </section>
+                  <section class="card">
+                    <div class="card-heading"><div><h2>MCP 服务</h2></div><button id="overview-mcp-more" class="subtle-button" type="button">查看全部</button></div>
+                    <div id="overview-mcp" class="compact-list"></div>
+                  </section>
                 </div>
-                <details class="client-details">
-                  <summary>查看客户端与路径</summary>
-                  <p class="hint">扫描全局技能目录；路径可在设置中覆盖。</p>
-                  <div id="overview-clients" class="client-list"></div>
-                </details>
-              </section>
-              <section class="card">
-                <div class="card-heading"><div><h2>需要处理</h2><p class="subtle">有更新、部分同步、本地修改或冲突的技能。</p></div></div>
-                <div id="overview-attention" class="compact-list"></div>
-              </section>
+              </div>
+              <aside class="overview-side" aria-label="环境状态">
+                <section class="card">
+                  <div class="card-heading"><div><h2>客户端</h2><p id="overview-client-summary" class="subtle">尚未扫描</p></div></div>
+                  <div id="overview-clients" class="client-mini-list"></div>
+                  <p id="overview-undetected" class="hint client-undetected"></p>
+                </section>
+                <section class="card">
+                  <div class="card-heading"><div><h2>中心库</h2></div></div>
+                  <dl id="overview-hub" class="hub-info"></dl>
+                </section>
+              </aside>
             </div>
-            <section class="card">
-              <div class="card-heading"><div><h2>最近技能</h2><p class="subtle">按更新时间排序，点击查看说明、文件和安装目标。</p></div><button id="overview-more" type="button">打开技能库</button></div>
-              <div id="overview-recent" class="compact-list"></div>
-            </section>
-            <section class="card">
-              <div class="card-heading"><div><h2>MCP 服务</h2><p class="subtle">各客户端的 MCP 配置；支持统一编辑、同步和停用。</p></div><button id="overview-mcp-more" type="button">打开 MCP</button></div>
-              <div id="overview-mcp" class="compact-list"></div>
-            </section>
-
-            <section class="card">
-              <div class="card-heading"><div><h2>中心库</h2><p class="subtle">所有纳管技能的唯一来源；客户端目录通过链接或副本同步。</p></div></div>
-              <div id="overview-hub" class="hub-info"></div>
-            </section>
           </section>
 
           <section id="view-library" class="view" role="tabpanel" aria-label="技能库" hidden>
-            <section class="card">
-              <div class="card-heading card-heading-filters">
-                <div><h2>技能库</h2><p id="library-summary" class="subtle">尚未扫描</p></div>
+            <section class="card list-card">
+              <div class="list-toolbar">
                 <div class="filters">
                   <label class="search-field"><span class="sr-only">搜索技能</span><input id="library-search" type="search" placeholder="搜索名称、描述或来源" autocomplete="off" /></label>
                   <select id="library-status" aria-label="按状态筛选">
@@ -127,7 +124,9 @@
                   </select>
                   <label class="check-inline"><input id="library-managed-only" type="checkbox" /> 仅已纳管</label>
                 </div>
+                <p id="library-summary" class="subtle list-summary">尚未扫描</p>
               </div>
+              <div id="library-head" class="list-head" aria-hidden="true" hidden><span>技能</span><span>来源</span><span>安装位置</span><span>状态</span><span></span></div>
               <div id="library-list" class="skill-list"></div>
               <div id="library-empty" class="empty-state" hidden>
                 <span class="empty-icon" aria-hidden="true">
@@ -141,11 +140,9 @@
           </section>
 
           <section id="view-mcp" class="view" role="tabpanel" aria-label="MCP 服务" hidden>
-            <div id="mcp-stats" class="stats-grid"></div>
             <div id="mcp-warning" class="notice warning" role="status" aria-live="polite" hidden></div>
-            <section class="card">
-              <div class="card-heading card-heading-filters">
-                <div><h2>MCP 服务</h2><p id="mcp-summary" class="subtle">尚未扫描</p></div>
+            <section class="card list-card">
+              <div class="list-toolbar">
                 <div class="filters">
                   <label class="search-field"><span class="sr-only">搜索 MCP</span><input id="mcp-search" type="search" placeholder="搜索名称、命令或 URL" autocomplete="off" /></label>
                   <select id="mcp-status" aria-label="按状态筛选 MCP">
@@ -158,9 +155,10 @@
                     <option value="untracked">未纳管</option>
                     <option value="hub_only">仅中心库</option>
                   </select>
-                  <button id="mcp-import-button" type="button">从 JSON 导入</button>
                 </div>
+                <p id="mcp-summary" class="subtle list-summary">尚未扫描</p>
               </div>
+              <div id="mcp-head" class="list-head" aria-hidden="true" hidden><span>服务</span><span>来源</span><span>同步到</span><span>状态</span><span></span></div>
               <div id="mcp-list" class="skill-list mcp-list"></div>
               <div id="mcp-empty" class="empty-state" hidden>
                 <span class="empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/></svg></span>
@@ -169,16 +167,17 @@
                 <button class="primary" type="button" data-action="add-mcp">添加 MCP</button>
               </div>
             </section>
-            <section class="card">
-              <div class="card-heading"><div><h2>客户端配置</h2><p class="subtle">只修改 mcpServers 条目，写入前自动备份原文件。</p></div></div>
+            <details class="card fold-card">
+              <summary><span class="fold-title">客户端配置文件</span><span id="mcp-adapter-summary" class="subtle"></span></summary>
+              <p class="hint">只修改 mcpServers 条目，写入前自动备份原文件。</p>
               <div id="mcp-adapters" class="client-list"></div>
-            </section>
+            </details>
           </section>
 
           <section id="view-install" class="view" role="tabpanel" aria-label="安装" hidden>
-            <div class="install-grid">
+            <div class="form-flow">
               <section class="card">
-                <div class="card-heading"><div><h2>安装来源</h2><p class="subtle">支持 GitHub 仓库/子目录、ZIP/TAR.GZ 和本地目录。技能会先进入中心库。</p></div></div>
+                <div class="card-heading"><div class="step-title"><span class="step-no">1</span><div><h2>选择来源</h2><p class="subtle">支持 GitHub 仓库或子目录、ZIP/TAR.GZ 和本地目录，技能会先进入中心库。</p></div></div></div>
                 <div class="segmented source-type" id="source-type" role="group" aria-label="来源类型">
                   <button type="button" data-type="github" aria-pressed="true">GitHub</button>
                   <button type="button" data-type="zip" aria-pressed="false">压缩包</button>
@@ -206,14 +205,12 @@
               </section>
 
               <section class="card">
-                <div class="card-heading"><div><h2>安装预览</h2><p class="subtle">选择技能和同步方式；目标客户端可留空，只保存到中心库。</p></div></div>
-                <div id="preview-panel" class="preview-panel">
-                  <div class="empty-state compact">
-                    <h3>尚未解析来源</h3>
-                    <p>填写左侧来源后点击“解析来源”。解析只下载到临时目录，不会写入客户端。</p>
-                  </div>
-                </div>
-                <div id="install-options" class="install-options" hidden>
+                <div class="card-heading"><div class="step-title"><span class="step-no">2</span><div><h2>选择技能</h2><p class="subtle">点击技能可查看风险和内容。</p></div></div></div>
+                <div id="preview-panel" class="preview-panel"></div>
+              </section>
+
+              <section id="install-options" class="card" hidden>
+                <div class="card-heading"><div class="step-title"><span class="step-no">3</span><div><h2>目标与方式</h2><p class="subtle">目标客户端可留空，只保存到中心库。</p></div></div></div>
                   <div class="option-block">
                     <h3>目标客户端</h3>
                     <div id="install-targets" class="target-picker"></div>
@@ -229,58 +226,67 @@
                     <p class="hint">Windows 下符号链接失败会自动回退到目录联接，再失败则复制并记录来源。选择“副本”时每个客户端会独立保存一份。</p>
                   </div>
                   <label class="check-line"><input id="install-overwrite" type="checkbox" /> 允许覆盖同名技能或未纳管目录（旧文件会移入插件回收站）</label>
-                  <label class="check-line"><input id="install-ack" type="checkbox" /> 我已查看风险项，仍要安装含高危脚本的技能</label>
-                  <div class="form-actions">
-                    <button id="install-button" class="primary" type="button">开始安装</button>
-                    <span id="install-status" class="subtle"></span>
-                  </div>
-                </div>
+                  <label id="install-ack-row" class="check-line" hidden><input id="install-ack" type="checkbox" /> 我已查看风险项，仍要安装含高危脚本的技能</label>
               </section>
+
+              <div id="install-bar" class="save-bar" hidden>
+                <span id="install-status" class="subtle"></span>
+                <button id="install-button" class="primary" type="button">开始安装</button>
+              </div>
             </div>
           </section>
 
           <section id="view-settings" class="view" role="tabpanel" aria-label="设置" hidden>
-            <div class="settings-grid">
+            <div class="form-flow">
               <section class="card">
                 <div class="card-heading"><div><h2>网络与来源</h2><p class="subtle">GitHub 直连受限时填写代理；Token 只保存在插件数据目录。</p></div></div>
-                <label class="field"><span>HTTPS 代理</span><input id="settings-proxy" type="text" placeholder="http://127.0.0.1:7890" autocomplete="off" /></label>
-                <label class="field"><span>GitHub Token</span><input id="settings-token" type="password" placeholder="留空保持不变；填写后用于 API 和私有仓库" autocomplete="off" /></label>
+                <div class="field-row">
+                  <label class="field"><span>HTTPS 代理</span><input id="settings-proxy" type="text" placeholder="http://127.0.0.1:7890" autocomplete="off" /></label>
+                  <label class="field"><span>GitHub Token</span><input id="settings-token" type="password" placeholder="留空保持不变；填写后用于 API 和私有仓库" autocomplete="off" /></label>
+                </div>
                 <label class="check-line"><input id="settings-clear-token" type="checkbox" /> 清除已保存的 Token</label>
                 <div class="form-actions">
                   <button id="test-connection" type="button">测试 GitHub 连接</button>
                   <span id="connection-status" class="subtle"></span>
+                  <span class="hint">修改代理或 Token 后先保存，再测试连接。</span>
                 </div>
-                <p class="hint">修改代理或 Token 后先保存设置，再测试连接。</p>
               </section>
 
               <section class="card">
                 <div class="card-heading"><div><h2>安装与扫描</h2><p class="subtle">默认值会带进下一次安装；风险扫描只做静态检查，不执行代码。</p></div></div>
-                <label class="field"><span>默认同步方式</span>
-                  <select id="settings-mode">
-                    <option value="auto">自动（链接优先）</option>
-                    <option value="link">链接</option>
-                    <option value="copy">副本</option>
-                  </select>
-                </label>
-                <label class="field"><span>风险扫描</span>
-                  <select id="settings-scan">
-                    <option value="basic">基础规则（推荐）</option>
-                    <option value="off">关闭</option>
-                  </select>
-                </label>
-                <label class="field"><span>下载上限（MiB）</span><input id="settings-max" type="number" min="1" max="512" step="1" /></label>
-                <div class="form-actions"><button id="save-settings" class="primary" type="button">保存设置</button><span id="settings-status" class="subtle"></span></div>
+                <div class="field-row three">
+                  <label class="field"><span>默认同步方式</span>
+                    <select id="settings-mode">
+                      <option value="auto">自动（链接优先）</option>
+                      <option value="link">链接</option>
+                      <option value="copy">副本</option>
+                    </select>
+                  </label>
+                  <label class="field"><span>风险扫描</span>
+                    <select id="settings-scan">
+                      <option value="basic">基础规则（推荐）</option>
+                      <option value="off">关闭</option>
+                    </select>
+                  </label>
+                  <label class="field"><span>下载上限（MiB）</span><input id="settings-max" type="number" min="1" max="512" step="1" /></label>
+                </div>
               </section>
 
-              <section class="card settings-wide">
+              <section class="card">
                 <div class="card-heading"><div><h2>客户端路径</h2><p class="subtle">留空使用默认路径；支持 ~ 展开。技能目录指的是存放 SKILL.md 的父目录。</p></div></div>
                 <div id="agent-paths" class="agent-paths"></div>
               </section>
 
-              <section class="card settings-wide">
+              <section class="card">
                 <div class="card-heading"><div><h2>自定义客户端</h2><p class="subtle">用于未内置的 Agent Skills 客户端；ID 只允许小写字母、数字和连字符。</p></div><button id="add-custom-agent" type="button">添加</button></div>
                 <div id="custom-agents" class="custom-agents"></div>
               </section>
+
+              <div class="save-bar">
+                <span class="hint">保存后本页全部设置同时生效。</span>
+                <span id="settings-status" class="subtle"></span>
+                <button id="save-settings" class="primary" type="button">保存设置</button>
+              </div>
             </div>
           </section>
         </main>
