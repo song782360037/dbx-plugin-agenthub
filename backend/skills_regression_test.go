@@ -281,7 +281,7 @@ func TestSkillsUpdateRejectsChangedPreviewEvenWithAcknowledgment(t *testing.T) {
 }
 
 func TestSkillsUpdateRejectsInvalidExpiredAndOrdinaryPreviews(t *testing.T) {
-	for _, kind := range []string{"invalid-description", "expired", "ordinary", "stale", "duplicate-name", "names-mismatch", "unconfirmed"} {
+	for _, kind := range []string{"expired", "ordinary", "stale", "duplicate-name", "names-mismatch", "unconfirmed"} {
 		t.Run(kind, func(t *testing.T) {
 			repo := newSkillsRepo(t)
 			m, agentDir := newTestManager(t)
@@ -289,8 +289,6 @@ func TestSkillsUpdateRejectsInvalidExpiredAndOrdinaryPreviews(t *testing.T) {
 			input := skillsUpdateInput(t, m)
 			preview, _ := m.getPreview(input.PreviewIDs[0])
 			switch kind {
-			case "invalid-description":
-				preview.Candidates[0].Description = strings.Repeat("x", 1025)
 			case "expired":
 				preview.CreatedAt = time.Now().Add(-3 * time.Hour)
 			case "ordinary":
@@ -321,17 +319,20 @@ func TestSkillsUpdateRejectsInvalidExpiredAndOrdinaryPreviews(t *testing.T) {
 	}
 }
 
-func TestSkillsUpdatePreviewValidatesCandidate(t *testing.T) {
+func TestSkillsUpdateAllowsLongDescriptionWithWarning(t *testing.T) {
 	repo := newSkillsRepo(t)
-	m, _ := newTestManager(t)
+	m, agentDir := newTestManager(t)
 	installSkillsRepo(t, m, "copy", "main")
 	repo.head = skillsSHA2
 	repo.contents[skillsSHA2] = "---\nname: update-skill\ndescription: " + strings.Repeat("x", 1025) + "\n---\nbody\n"
-	if _, err := m.previewUpdates([]string{"update-skill"}); err == nil {
-		t.Fatal("invalid candidate accepted for update")
+	if _, err := m.updateSkills(skillsUpdateInput(t, m)); err != nil {
+		t.Fatal(err)
 	}
-	if len(m.previews) != 0 {
-		t.Fatal("failed update review leaked preview")
+	if string(readSkillsFile(t, filepath.Join(agentDir, "update-skill", "SKILL.md"))) != repo.contents[skillsSHA2] {
+		t.Fatal("long description update did not reach target")
+	}
+	if !strings.Contains(strings.Join(m.state.Skills["update-skill"].Warnings, "；"), "description 超过 1024") {
+		t.Fatalf("warnings = %#v", m.state.Skills["update-skill"].Warnings)
 	}
 }
 

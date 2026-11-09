@@ -116,9 +116,6 @@ func validateCandidate(candidate Candidate) error {
 	if len(candidate.Name) > 64 {
 		return fmt.Errorf("技能名 %q 超过 64 字符", candidate.Name)
 	}
-	if len(candidate.Description) > 1024 {
-		return fmt.Errorf("技能 %s 的 description 超过 1024 字符", candidate.Name)
-	}
 	return nil
 }
 

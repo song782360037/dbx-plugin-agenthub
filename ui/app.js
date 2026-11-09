@@ -191,7 +191,7 @@
   }
 
   function statusPriority(status) {
-    return { update: 0, conflict: 1, modified: 2, missing: 3, partial: 4, hub_only: 5, untracked: 6, synced: 7 }[status] ?? 8;
+    return { conflict: 0, update: 1, modified: 2, missing: 3, partial: 4, hub_only: 5, untracked: 6, synced: 7 }[status] ?? 8;
   }
 
   function sourceLabel(view) {
@@ -207,7 +207,7 @@
       case "url":
         try { return `URL · ${new URL(source.url).host}`; } catch { return "URL"; }
       case "adopted":
-        return `纳入管理 · ${source.label || ""}`;
+        return `客户端目录 · ${source.label || ""}`;
       default:
         return source.label || source.type;
     }
@@ -220,7 +220,7 @@
     return source.localPath || source.url || source.archiveName || source.label || "";
   }
 
-  function targetChips(targets, limit = 6) {
+  function targetChips(targets, limit = 3) {
     const wrap = h("div", { class: "target-chips" });
     const list = Array.isArray(targets) ? targets : [];
     for (const target of list.slice(0, limit)) {
@@ -230,10 +230,13 @@
       if (!target.managed) classes.push("untracked");
       wrap.append(h("span", {
         class: classes.join(" "),
-        title: `${target.path || ""}${target.mode ? ` · ${target.mode}` : ""}${target.exists === false ? " · 未安装" : ""}`
+        title: `${target.agentName || agentName(target.agentId)} · ${target.path || ""}${target.mode ? ` · ${target.mode}` : ""}${target.exists === false ? " · 未安装" : ""}`
       }, target.agentName || agentName(target.agentId)));
     }
-    if (list.length > limit) wrap.append(h("span", { class: "chip" }, `+${list.length - limit}`));
+    if (list.length > limit) {
+      const hidden = list.slice(limit).map((target) => target.agentName || agentName(target.agentId)).join("、");
+      wrap.append(h("span", { class: "chip", title: hidden }, `+${list.length - limit}`));
+    }
     if (!list.length) wrap.append(h("span", { class: "subtle" }, "未安装"));
     return wrap;
   }
@@ -360,9 +363,8 @@
     const mcpCount = state.mcpOverview?.servers?.length || 0;
     $("nav-mcp-count").textContent = String(mcpCount);
     $("nav-mcp-count").hidden = mcpCount === 0;
-    const stats = state.overview?.stats || {};
-    const mcpStats = state.mcpOverview?.stats || {};
-    setStatus("sidebar-summary", `${stats.detectedAgents || 0} 客户端 · ${stats.managed || 0} 技能 · ${mcpStats.managed || 0} MCP`);
+    const scannedAt = state.overview?.scannedAt;
+    setStatus("sidebar-summary", scannedAt ? `扫描于 ${formatDate(scannedAt)}` : "尚未扫描");
   }
 
   function renderStats() {
@@ -370,19 +372,18 @@
     const stats = state.overview.stats || {};
     const mcpStats = state.mcpOverview?.stats || {};
     const cells = [
-      { label: "已纳管技能", value: stats.managed || 0, note: `${state.overview.skills.filter((skill) => skill.managed).length} 个可从中心库同步` },
+      { label: "需要处理", value: stats.needsAttention || 0, note: "更新、部分同步或冲突", alert: true },
+      { label: "已纳管技能", value: stats.managed || 0, note: "可从中心库同步" },
       { label: "已同步", value: stats.synced || 0, note: "所有目标内容一致" },
-      { label: "需要处理", value: stats.needsAttention || 0, note: "更新、部分同步或冲突" },
-      { label: "未纳管", value: stats.untracked || 0, note: "只在客户端目录中发现" },
-      { label: "MCP 服务", value: mcpStats.managed || 0, note: `${mcpStats.synced || 0} 已同步 · ${mcpStats.untracked || 0} 未纳管` }
+      { label: "未纳管", value: state.overview.skills.filter((skill) => !skill.managed).length, note: "只在客户端目录中发现" },
+      { label: "已纳管 MCP", value: mcpStats.managed || 0, note: `${mcpStats.synced || 0} 已同步 · ${mcpStats.untracked || 0} 未纳管` }
     ];
     const wrap = $("overview-stats");
     clear(wrap);
     for (const cell of cells) {
-      wrap.append(h("div", { class: "stat" },
+      wrap.append(h("div", { class: `stat${cell.alert && cell.value ? " alert" : ""}`, title: cell.note },
         h("span", { class: "stat-label" }, cell.label),
-        h("strong", {}, String(cell.value)),
-        h("span", { class: "stat-note" }, cell.note)
+        h("strong", {}, String(cell.value))
       ));
     }
   }
@@ -392,53 +393,77 @@
     clear(wrap);
     const agents = state.overview.agents || [];
     setStatus("overview-client-summary", `已检测 ${agents.filter((agent) => agent.detected).length} / ${agents.length} 个客户端`);
-    for (const agent of agents) {
-      const status = agent.detected ? "已检测" : "未检测";
-      wrap.append(h("div", { class: "client-row" },
-        h("div", { class: "client-name" }, h("i", { class: `led${agent.detected ? " on" : ""}` }), agent.name),
-        h("div", { class: "client-path", title: agent.path }, agent.path),
-        h("div", { class: `client-status${agent.detected ? " on" : ""}` }, agent.overridden ? `${status} · 自定义路径` : status),
-        agent.note ? h("div", { class: "client-note" }, agent.note) : null
+    for (const agent of agents.filter((item) => item.detected)) {
+      wrap.append(h("div", { class: "client-mini", title: agent.note ? `${agent.path} · ${agent.note}` : agent.path },
+        h("i", { class: "led on" }),
+        h("span", { class: "client-mini-name" }, agent.name),
+        agent.overridden ? h("small", {}, "自定义路径") : null
       ));
     }
+    const missing = agents.filter((agent) => !agent.detected).map((agent) => agent.name);
+    setStatus("overview-undetected", missing.length ? `未检测：${missing.join("、")}` : "");
   }
 
-  function compactRow(skill) {
+  function compactRow(skill, actions) {
     return h("div", { class: "compact-row", onclick: () => openDetail(skill.name) },
       h("div", { class: "compact-main" },
-        h("div", { class: "compact-name" }, skill.name),
-        h("div", { class: "compact-desc" }, skill.description || sourceLabel(skill))
+        h("div", { class: "compact-name", title: skill.name }, skill.name),
+        h("div", { class: "compact-desc", title: skill.description || null }, skill.description || sourceLabel(skill))
       ),
-      statusBadge(skill.status)
+      statusBadge(skill.status),
+      actions
     );
+  }
+
+  // Row-level shortcut for the action a skill's current status calls for.
+  function skillRowActions(skill) {
+    const actions = h("div", { class: "row-actions" });
+    if (skill.managed && skill.status === "update") {
+      actions.append(h("button", { type: "button", class: "primary", onclick: (event) => { event.stopPropagation(); updateSkill(skill.name); } }, "更新"));
+    }
+    if (skill.managed && (skill.status === "partial" || skill.status === "hub_only")) {
+      actions.append(h("button", { type: "button", onclick: (event) => { event.stopPropagation(); syncMissing(skill); } }, "补齐"));
+    }
+    if (!skill.managed) {
+      actions.append(h("button", { type: "button", onclick: (event) => { event.stopPropagation(); adoptSkill(skill); } }, "纳入管理"));
+    }
+    return actions;
+  }
+
+  // Overview shows at most this many items; recent skills skip the ones listed here.
+  function attentionSkills() {
+    return (state.overview.skills || [])
+      .filter((skill) => ["update", "partial", "modified", "conflict", "missing", "hub_only"].includes(skill.status))
+      .sort((left, right) => statusPriority(left.status) - statusPriority(right.status) || left.name.localeCompare(right.name, "zh-CN"))
+      .slice(0, 8);
   }
 
   function renderAttention() {
     const wrap = $("overview-attention");
     clear(wrap);
-    const attention = (state.overview.skills || [])
-      .filter((skill) => ["update", "partial", "modified", "conflict", "missing", "hub_only"].includes(skill.status))
-      .sort((left, right) => statusPriority(left.status) - statusPriority(right.status) || left.name.localeCompare(right.name, "zh-CN"));
+    const attention = attentionSkills();
     if (!attention.length) {
       wrap.append(h("p", { class: "subtle" }, "没有需要处理的技能。"));
       return;
     }
-    for (const skill of attention.slice(0, 8)) wrap.append(compactRow(skill));
+    for (const skill of attention) wrap.append(compactRow(skill, skillRowActions(skill)));
   }
 
   function renderRecent() {
     const wrap = $("overview-recent");
     clear(wrap);
-    const skills = [...(state.overview.skills || [])].sort((left, right) => {
+    const all = state.overview.skills || [];
+    const listed = new Set(attentionSkills().map((skill) => skill.name));
+    const skills = all.filter((skill) => !listed.has(skill.name)).sort((left, right) => {
       const leftTime = Date.parse(left.updatedAt || 0) || 0;
       const rightTime = Date.parse(right.updatedAt || 0) || 0;
       return rightTime - leftTime || left.name.localeCompare(right.name, "zh-CN");
     });
     if (!skills.length) {
-      wrap.append(h("p", { class: "subtle" }, "还没有发现技能。"));
+      wrap.append(h("p", { class: "subtle" }, all.length ? "其余技能都已列在“需要处理”中。" : "还没有发现技能。"));
       return;
     }
-    for (const skill of skills.slice(0, 6)) wrap.append(compactRow(skill));
+    for (const skill of skills.slice(0, 5)) wrap.append(compactRow(skill));
   }
 
   function renderHub() {
@@ -447,11 +472,9 @@
     const settings = state.overview.settings || {};
     const rows = [
       ["目录", state.overview.hubPath || "—"],
-      ["纳管技能", `${state.overview.stats?.managed || 0} 个`],
       ["默认同步", { auto: "自动（链接优先）", link: "链接", copy: "副本" }[settings.defaultMode] || settings.defaultMode || "—"],
       ["GitHub Token", settings.hasToken ? "已配置（不回显）" : "未配置"],
-      ["风险扫描", settings.scanLevel === "off" ? "已关闭" : "基础规则"],
-      ["最近扫描", formatDate(state.overview.scannedAt)]
+      ["风险扫描", settings.scanLevel === "off" ? "已关闭" : "基础规则"]
     ];
     for (const [label, value] of rows) {
       wrap.append(h("dt", {}, label), h("dd", {}, value));
@@ -490,22 +513,13 @@
     $("library-summary").textContent = `共 ${all.length} 个技能 · ${all.filter((skill) => !skill.managed).length} 个未纳管 · ${attention} 个需要处理`;
     const empty = $("library-empty");
     empty.hidden = skills.length > 0;
+    $("library-head").hidden = skills.length === 0;
     if (!skills.length) {
       $("library-empty-title").textContent = all.length ? "没有匹配的技能" : "还没有技能";
       $("library-empty-text").textContent = all.length ? "调整搜索或状态筛选条件。" : "从 GitHub 或压缩包导入第一个技能。";
     }
     for (const skill of skills) {
-      const actions = h("div", { class: "row-actions" });
-      if (skill.managed && skill.status === "update") {
-        actions.append(h("button", { type: "button", class: "primary", onclick: (event) => { event.stopPropagation(); updateSkill(skill.name); } }, "更新"));
-      }
-      if (skill.managed && (skill.status === "partial" || skill.status === "hub_only")) {
-        actions.append(h("button", { type: "button", onclick: (event) => { event.stopPropagation(); syncMissing(skill); } }, "补齐"));
-      }
-      if (!skill.managed) {
-        actions.append(h("button", { type: "button", onclick: (event) => { event.stopPropagation(); adoptSkill(skill); } }, "纳入管理"));
-      }
-      actions.append(h("button", { type: "button", class: "subtle-button", onclick: (event) => { event.stopPropagation(); openDetail(skill.name); } }, "详情"));
+      const actions = skillRowActions(skill);
       const source = h("div", { class: "skill-source", title: sourceTitle(skill) },
         h("span", {}, sourceLabel(skill)),
         skill.source?.path ? h("span", { class: "mono" }, skill.source.path) : null
@@ -519,11 +533,11 @@
       },
         h("div", { class: "skill-main" },
           h("div", { class: "skill-title-line" },
-            h("span", { class: "skill-name" }, skill.name),
-            !skill.managed ? h("span", { class: "chip untracked" }, "未纳管") : null,
-            skill.available?.commit ? h("span", { class: "chip modified" }, "新版本") : null
+            h("span", { class: "skill-name", title: skill.name }, skill.name),
+            !skill.managed && skill.status !== "untracked" ? h("span", { class: "chip untracked" }, "未纳管") : null,
+            skill.available?.commit && skill.status !== "update" ? h("span", { class: "chip modified" }, "新版本") : null
           ),
-          h("div", { class: "skill-desc" }, skill.description || "没有 description")
+          h("div", { class: "skill-desc", title: skill.description || null }, skill.description || "没有 description")
         ),
         source,
         targetChips(skill.targets),
@@ -573,28 +587,8 @@
 
   function renderMCP() {
     if (!state.mcpOverview) return;
-    renderMCPStats();
     renderMCPList();
     renderMCPAdapters();
-  }
-
-  function renderMCPStats() {
-    const stats = state.mcpOverview?.stats || {};
-    const cells = [
-      { label: "已纳管 MCP", value: stats.managed || 0, note: "中心库中的服务配置" },
-      { label: "已同步", value: stats.synced || 0, note: "所有目标配置一致" },
-      { label: "需要处理", value: stats.needsAttention || 0, note: "部分同步、修改或冲突" },
-      { label: "未纳管", value: stats.untracked || 0, note: "只在客户端配置中发现" }
-    ];
-    const wrap = $("mcp-stats");
-    clear(wrap);
-    for (const cell of cells) {
-      wrap.append(h("div", { class: "stat" },
-        h("span", { class: "stat-label" }, cell.label),
-        h("strong", {}, String(cell.value)),
-        h("span", { class: "stat-note" }, cell.note)
-      ));
-    }
   }
 
   function filteredMCPServers() {
@@ -623,6 +617,7 @@
     $("mcp-summary").textContent = `共 ${all.length} 个 MCP 服务 · ${all.filter((server) => !server.managed).length} 个未纳管 · ${attention} 个需要处理`;
     const empty = $("mcp-empty");
     empty.hidden = servers.length > 0;
+    $("mcp-head").hidden = servers.length === 0;
     if (!servers.length) {
       $("mcp-empty-title").textContent = all.length ? "没有匹配的 MCP 服务" : "还没有 MCP 服务";
       $("mcp-empty-text").textContent = all.length ? "调整搜索或状态筛选条件。" : "添加一个 stdio 或 HTTP MCP 服务，并选择要同步的客户端。";
@@ -632,9 +627,9 @@
       actions.append(h("button", { type: "button", onclick: (event) => { event.stopPropagation(); openMCPDetail(server.name); } }, server.managed ? "编辑" : "纳入管理"));
       const main = h("div", { class: "skill-main" },
         h("div", { class: "skill-title-line" },
-          h("span", { class: "skill-name" }, server.name),
+          h("span", { class: "skill-name", title: server.name }, server.name),
           h("span", { class: "chip" }, server.transport.toUpperCase()),
-          !server.managed ? h("span", { class: "chip untracked" }, "未纳管") : null
+          !server.managed && server.status !== "untracked" ? h("span", { class: "chip untracked" }, "未纳管") : null
         ),
         h("div", { class: "mcp-endpoint", title: mcpEndpoint(server) }, mcpEndpoint(server) || "—")
       );
@@ -657,7 +652,9 @@
   function renderMCPAdapters() {
     const wrap = $("mcp-adapters");
     clear(wrap);
-    for (const adapter of state.mcpOverview?.adapters || []) {
+    const adapters = state.mcpOverview?.adapters || [];
+    setStatus("mcp-adapter-summary", `已检测 ${adapters.filter((adapter) => adapter.detected).length} / ${adapters.length}`);
+    for (const adapter of adapters) {
       wrap.append(h("div", { class: "client-row" },
         h("div", { class: "client-name" }, h("i", { class: `led${adapter.detected ? " on" : ""}` }), adapter.name),
         h("div", { class: "client-path", title: adapter.path }, adapter.path),
@@ -747,15 +744,14 @@
     clear(meta);
     if (!isAdd) {
       const rows = [
-        ["状态", view?.statusText || "—"],
         ["来源", mcpSourceLabel(view)],
         ["传输", (config?.transport || "").toUpperCase()],
-        ["环境变量", (view?.envKeys || []).join("、") || "无"],
+        ["更新时间", formatDate(view?.updatedAt)],
         ["请求头", (view?.headerKeys || []).join("、") || "无"],
-        ["更新时间", formatDate(view?.updatedAt)]
+        ["环境变量", (view?.envKeys || []).join("、") || "无", true]
       ];
-      for (const [label, value] of rows) meta.append(h("div", { class: "meta-line" }, h("b", {}, label), h("span", {}, value || "—")));
-      if (view?.warnings?.length) meta.append(h("div", { class: "meta-line" }, h("b", {}, "提示"), h("span", {}, view.warnings.join("；"))));
+      if (view?.warnings?.length) rows.push(["提示", view.warnings.join("；"), true]);
+      for (const [label, value, wide] of rows) meta.append(metaLine(label, value, wide));
     }
     const editable = isAdd || state.mcpMode === "edit";
     for (const id of ["mcp-transport", "mcp-command", "mcp-args", "mcp-url", "mcp-env", "mcp-headers", "mcp-timeout"]) {
@@ -1196,6 +1192,10 @@
     return box;
   }
 
+  function metaLine(label, value, wide) {
+    return h("div", { class: `meta-line${wide ? " wide" : ""}` }, h("b", {}, label), h("span", {}, value || "—"));
+  }
+
   function renderDetail() {
     const detail = state.detail;
     if (!detail) return;
@@ -1204,21 +1204,18 @@
     $("detail-desc").textContent = skill.description || "没有 description";
     const meta = $("detail-meta");
     clear(meta);
-    const source = skill.source ? sourceLabel(skill) : "—";
+    const source = skill.source ? (sourceTitle(skill) || sourceLabel(skill)) : "—";
     const rows = [
-      ["状态", skill.statusText || statusMeta[skill.status]?.label || skill.status],
-      ["来源", source],
-      ["来源详情", sourceTitle(skill) || "—"],
-      ["内容哈希", shortHash(skill.contentHash)],
+      ["状态", statusBadge(skill.status, skill.statusText)],
+      ["文件", `${skill.files || 0} 个 · ${formatBytes(skill.size)}`],
       ["更新时间", formatDate(skill.updatedAt)],
-      ["文件", `${skill.files || 0} 个 · ${formatBytes(skill.size)}`]
+      ["内容哈希", shortHash(skill.contentHash)],
+      ["来源", source, true]
     ];
-    if (skill.available?.commit) rows.push(["新版本", `${shortHash(skill.available.commit)} · ${formatDate(skill.available.checkedAt)}`]);
-    if (skill.available?.error) rows.push(["检查结果", skill.available.error]);
-    if (skill.warnings?.length) rows.push(["提示", skill.warnings.join("；")]);
-    for (const [label, value] of rows) {
-      meta.append(h("div", { class: "meta-line" }, h("b", {}, label), h("span", {}, value || "—")));
-    }
+    if (skill.available?.commit) rows.push(["新版本", `${shortHash(skill.available.commit)} · ${formatDate(skill.available.checkedAt)}`, true]);
+    if (skill.available?.error) rows.push(["检查结果", skill.available.error, true]);
+    if (skill.warnings?.length) rows.push(["提示", skill.warnings.join("；"), true]);
+    for (const [label, value, wide] of rows) meta.append(metaLine(label, value, wide));
     for (const button of document.querySelectorAll("#detail-tabs button")) {
       button.setAttribute("aria-selected", String(button.dataset.tab === state.detailTab));
     }
@@ -1230,7 +1227,7 @@
       if (state.fileView.binary) body.append(h("p", { class: "subtle" }, "二进制文件，不提供文本预览。"));
       else body.append(h("pre", { class: "code-view" }, state.fileView.content || ""));
     } else if (state.detailTab === "readme") {
-      const toolbar = h("div", { class: "form-actions", style: { marginTop: "0", marginBottom: "10px" } },
+      const toolbar = h("div", { class: "form-actions", style: { marginTop: "0", marginBottom: "4px", justifyContent: "flex-end" } },
         h("button", { type: "button", class: "subtle-button", onclick: () => { state.detailRaw = !state.detailRaw; renderDetail(); } }, state.detailRaw ? "渲染预览" : "查看原文")
       );
       body.append(toolbar);
@@ -1270,9 +1267,9 @@
     const actions = $("detail-actions");
     clear(actions);
     if (skill.managed) {
-      actions.append(h("button", { type: "button", onclick: () => checkOneUpdate(skill.name) }, "检查更新"));
       if (skill.status === "update" || skill.available?.commit) actions.append(h("button", { type: "button", class: "primary", onclick: () => updateSkill(skill.name) }, "更新"));
       if (skill.status === "partial" || skill.status === "hub_only") actions.append(h("button", { type: "button", onclick: () => syncMissing(skill) }, "补齐客户端"));
+      actions.append(h("button", { type: "button", onclick: () => checkOneUpdate(skill.name) }, "检查更新"));
       actions.append(h("button", { type: "button", onclick: () => copyText(sourceTitle(skill) || sourceLabel(skill)) }, "复制来源"));
       actions.append(h("button", { type: "button", class: "danger", onclick: () => removeSkill(skill) }, "移除"));
     } else {
@@ -1652,11 +1649,12 @@
       button.setAttribute("aria-selected", String(button.dataset.view === view));
     }
     $("page-title").textContent = viewTitles[view];
-    $("breadcrumb-view").textContent = viewTitles[view];
     $("global-toolbar").hidden = false;
     const skillToolbar = view === "overview" || view === "library";
+    $("refresh").hidden = view === "install" || view === "settings";
     $("check-updates").hidden = !skillToolbar;
-    $("open-install").hidden = view === "mcp" || view === "settings";
+    $("open-install").hidden = !skillToolbar;
+    $("mcp-import-button").hidden = view !== "mcp";
     $("add-mcp").hidden = view !== "mcp";
     if (view === "settings") renderSettings();
     if (view === "install") renderPreview();
@@ -1672,12 +1670,14 @@
     const options = $("install-options");
     clear(panel);
     const preview = state.preview;
+    // Only the next step in the install flow keeps the primary style.
+    $("preview-source").classList.toggle("primary", !preview);
+    $("install-bar").hidden = !preview;
     if (!preview) {
       $("install-button").disabled = true;
       options.hidden = true;
       panel.append(h("div", { class: "empty-state compact" },
-        h("h3", {}, "尚未解析来源"),
-        h("p", {}, "填写左侧来源后点击“解析来源”。解析只下载到临时目录，不会写入客户端。")
+        h("p", {}, "解析来源后在这里选择技能。解析只下载到临时目录，不会写入客户端。")
       ));
       return;
     }
@@ -1732,7 +1732,7 @@
         h("div", { class: "candidate-actions" },
           critical ? h("span", { class: "risk-pill critical" }, `${critical} 高危`) : null,
           high ? h("span", { class: "risk-pill high" }, `${high} 高风险`) : null,
-          risks.length ? h("span", { class: "risk-pill medium" }, `${risks.length} 项风险`) : h("span", { class: "subtle" }, "未发现明显风险")
+          !risks.length ? h("span", { class: "subtle" }, "未发现明显风险") : (!critical && !high ? h("span", { class: "risk-pill medium" }, `${risks.length} 项风险`) : null)
         )
       );
       list.append(row);
@@ -1746,6 +1746,7 @@
       return;
     }
     renderTargets();
+    $("install-ack-row").hidden = !preview.candidates.some((item) => state.selectedCandidates.has(item.name) && (item.risk || []).some((risk) => risk.severity === "critical"));
     const installButton = $("install-button");
     installButton.disabled = state.selectedCandidates.size === 0;
     setStatus("install-status", `${state.selectedCandidates.size} 个技能 · ${state.selectedTargets.size ? `${state.selectedTargets.size} 个客户端` : "仅中心库"}`);
@@ -1753,7 +1754,6 @@
 
   function candidateDetail(candidate) {
     const box = h("div", { class: "preview-detail" });
-    box.append(h("h3", {}, candidate.name));
     if (candidate.warnings?.length) {
       box.append(h("p", { class: "hint" }, `提示：${candidate.warnings.join("；")}`));
     }
@@ -1772,7 +1772,7 @@
   function renderTargets() {
     const wrap = $("install-targets");
     clear(wrap);
-    const agents = state.overview?.agents || [];
+    const agents = [...(state.overview?.agents || [])].sort((left, right) => Number(Boolean(right.detected || right.custom)) - Number(Boolean(left.detected || left.custom)));
     for (const agent of agents) {
       const checked = state.selectedTargets.has(agent.id);
       const disabled = !agent.detected && !agent.custom;
@@ -1799,7 +1799,7 @@
     const hint = $("target-hint");
     if (!state.selectedTargets.size) hint.textContent = "不选择客户端时只保存到中心库，之后可在技能详情里下发。";
     else if (state.selectedTargets.has("codex") && state.selectedTargets.has("universal")) hint.textContent = "Codex 也可能读取通用目录；同时选择两处可能出现同名技能，请确认后再安装。";
-    else hint.textContent = "链接模式优先使用软链接；Windows 下自动回退到目录联接或副本。";
+    else hint.textContent = "";
     for (const button of document.querySelectorAll("#install-mode button")) {
       button.setAttribute("aria-pressed", String(button.dataset.mode === state.installMode));
     }
@@ -1849,7 +1849,7 @@
       state.preview = preview;
       state.previewDetail = preview.candidates[0]?.name || "";
       state.selectedCandidates = new Set(preview.candidates.length <= 15 ? preview.candidates.map((item) => item.name) : []);
-      setStatus("source-status", `发现 ${preview.candidates.length} 个技能`);
+      setStatus("source-status", "");
       renderPreview();
     } catch (error) {
       if (request !== state.previewRequest) return;
@@ -2058,7 +2058,6 @@
       $("menu-toggle").setAttribute("aria-expanded", String(open));
     });
     $("refresh").addEventListener("click", () => refreshAll());
-    $("rescan").addEventListener("click", () => refreshAll());
     $("check-updates").addEventListener("click", checkAllUpdates);
     $("open-install").addEventListener("click", () => showView("install"));
     $("add-mcp").addEventListener("click", openMCPAdd);
